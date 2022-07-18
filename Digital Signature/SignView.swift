@@ -7,8 +7,37 @@
 
 import UIKit
 
+extension UIBezierPath {
+    func moveWithCurve(a: CGPoint, b: CGPoint, c: CGPoint, d: CGPoint) -> CGPoint {
+        
+        var midPoint = a
+        move(to: midPoint)
+        midPoint = getMidPoint(a: c, b: d)
+        addCurve(to: midPoint, controlPoint1: b, controlPoint2: c)
+        return midPoint
+    }
+    
+    fileprivate func getMidPoint(a: CGPoint, b: CGPoint) -> CGPoint {
+        return CGPoint(x: (a.x + b.x)/2.0, y: (a.y + b.y)/2.0)
+    }
+}
+
 @IBDesignable
 class SignView: UIView {
+    
+    /// Counter for number of control points
+    var ctr: Int = 0
+    
+    /// Saves touche points for drawing
+    var touches = [CGPoint](repeating: CGPoint(), count:5)
+    
+    /// Drawing path
+    var path = UIBezierPath() {
+        didSet {
+            path.lineJoinStyle = .round
+            setNeedsDisplay()
+        }
+    }
     
     // Inspectable elements
     
@@ -19,7 +48,7 @@ class SignView: UIView {
         }
     }
     
-    @IBInspectable open var lineColor: UIColor = .black {
+    @IBInspectable open var lineColor: UIColor = .orange {
         didSet {
             setNeedsDisplay()
         }
@@ -48,13 +77,10 @@ class SignView: UIView {
         return UIImage(view: self)
     }
     
-    private var path = UIBezierPath()
-    private var lines = [[CGPoint]]()
     
     // MARK: - Clear path
     
     internal func clear() {
-        lines.removeAll()
         path.removeAllPoints()
         setNeedsDisplay()
     }
@@ -71,34 +97,59 @@ class SignView: UIView {
     
     override open func draw(_ rect: CGRect) {
         super.draw(rect)
-        
-        // Custom Drawing
-        lines.forEach { (line) in
-            for (i,p) in line.enumerated() {
-                if i == 0 {
-                    path.move(to: p)
-                }
-                else {
-                    path.addLine(to: p)
-                }
-            }
-        }
         lineColor.setStroke()
         path.stroke()
+        setNeedsDisplay()
     }
+    
     
     // Track the finger as we move across screen
     
     override open func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        lines.append([CGPoint]())
+        let point = touches.first!.location(in: self)
+        insertTouch(touch: point, at: 0)
+        super.touchesBegan(touches, with: event)
+        
     }
     
     override open func touchesMoved (_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let points = touches.first?.location(in: self) else { return }
-        guard var lastLine = lines.popLast() else { return }
-        lastLine.append(points)
-        lines.append(lastLine)
+        let point = touches.first!.location(in: self) // It must come in any case
+        
+        guard ctr == 4 else {
+            insertTouch(touch: point, at: ctr+1)
+            return
+        }
+        
+        self.touches[1] = path.moveWithCurve(a: self.touches[1], b: self.touches[2], c: self.touches[3], d: point)
+        
+        insertTouch(touch: point, at: 2)
+        
         setNeedsDisplay()
+        
+        super.touchesMoved(touches, with: event)
+    }
+    
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        
+        guard ctr == 0 else {
+            ctr = 0
+            return
+        }
+        
+        addDot(origin: (touches.first!.location(in: self)), size: lineWidth)
+        setNeedsDisplay()
+        super.touchesEnded(touches, with: event)
+    }
+    
+    func addDot(origin: CGPoint, size: CGFloat) {
+        let rect = CGRect(origin: origin, size: CGSize(width: size, height: size))
+        let dotPath = UIBezierPath(ovalIn: rect)
+        path.append(dotPath)
+    }
+    
+    func insertTouch(touch: CGPoint, at index: Int) {
+        ctr = index
+        touches.insert(touch, at: ctr)
     }
 }
 
