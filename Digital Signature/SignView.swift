@@ -104,9 +104,10 @@ class SignView: UIView {
     
     open override func prepareForInterfaceBuilder() {
         let label = UILabel(frame: self.bounds)
-        label.text = "Nitin Bhatia Digital Signature"
-        label.textColor = UIColor.black.withAlphaComponent(0.7)
+        label.text = "Nitin Bhatia's Digital Signature"
+        label.textColor = UIColor.black.withAlphaComponent(0.5)
         label.textAlignment = .center
+        label.numberOfLines = 0
         label.font = UIFont(name: "Gill Sans", size: bounds.width/10)
         label.sizeThatFits(intrinsicContentSize)
         self.addSubview(label)
