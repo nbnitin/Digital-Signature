@@ -102,6 +102,18 @@ class SignView: UIView {
         setNeedsDisplay()
     }
     
+    open override func prepareForInterfaceBuilder() {
+        let label = UILabel(frame: self.bounds)
+        label.text = "Nitin Bhatia Digital Signature"
+        label.textColor = UIColor.black.withAlphaComponent(0.7)
+        label.textAlignment = .center
+        label.font = UIFont(name: "Gill Sans", size: bounds.width/10)
+        label.sizeThatFits(intrinsicContentSize)
+        self.addSubview(label)
+        self.backgroundColor = .white
+        
+    }
+    
     
     // Track the finger as we move across screen
     
